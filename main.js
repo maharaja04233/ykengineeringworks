@@ -87,6 +87,7 @@
   } else if ($(".mobile-nav, .mobile-nav-toggle").length) {
     $(".mobile-nav, .mobile-nav-toggle").hide();
   }
+
   // Toggle .header-scrolled class to #header when page is scrolled
   $(window).scroll(function() {
     if ($(this).scrollTop() > 100) {
@@ -100,24 +101,30 @@
     $('#header').addClass('header-scrolled');
   }
 
-  // Stick the header at top on scroll
-  $("#header").sticky({
-    topSpacing: 0,
-    zIndex: '50'
-  });
+  // Check if jQuery Sticky plugin is available
+  if ($.fn.sticky) {
+    // Stick the header at top on scroll
+    $("#header").sticky({
+      topSpacing: 0,
+      zIndex: '50'
+    });
+  }
 
   // Intro carousel
   var heroCarousel = $("#heroCarousel");
   var heroCarouselIndicators = $("#hero-carousel-indicators");
-  heroCarousel.find(".carousel-inner").children(".carousel-item").each(function(index) {
-    (index === 0) ?
-    heroCarouselIndicators.append("<li data-target='#heroCarousel' data-slide-to='" + index + "' class='active'></li>"):
-      heroCarouselIndicators.append("<li data-target='#heroCarousel' data-slide-to='" + index + "'></li>");
-  });
+  
+  if (heroCarousel.length && heroCarouselIndicators.length) {
+    heroCarousel.find(".carousel-inner").children(".carousel-item").each(function(index) {
+      (index === 0) ?
+      heroCarouselIndicators.append("<li data-target='#heroCarousel' data-slide-to='" + index + "' class='active'></li>") :
+        heroCarouselIndicators.append("<li data-target='#heroCarousel' data-slide-to='" + index + "'></li>");
+    });
 
-  heroCarousel.on('slid.bs.carousel', function(e) {
-    $(this).find('.carousel-content ').addClass('animate__animated animate__fadeInDown');
-  });
+    heroCarousel.on('slid.bs.carousel', function(e) {
+      $(this).find('.carousel-content ').addClass('animate__animated animate__fadeInDown');
+    });
+  }
 
   // Back to top button
   $(window).scroll(function() {
@@ -135,56 +142,103 @@
     return false;
   });
 
-  // Porfolio isotope and filter
+  // Portfolio isotope and filter
   $(window).on('load', function() {
-    var portfolioIsotope = $('.portfolio-container').isotope({
-      itemSelector: '.portfolio-item',
-      layoutMode: 'fitRows'
-    });
-
-    $('#portfolio-flters li').on('click', function() {
-      $("#portfolio-flters li").removeClass('filter-active');
-      $(this).addClass('filter-active');
-
-      portfolioIsotope.isotope({
-        filter: $(this).data('filter')
+    if ($('.portfolio-container').length) {
+      var portfolioIsotope = $('.portfolio-container').isotope({
+        itemSelector: '.portfolio-item',
+        layoutMode: 'fitRows'
       });
-      aos_init();
-    });
 
-    // Initiate venobox (lightbox feature used in portofilo)
-    $(document).ready(function() {
+      $('#portfolio-flters li').on('click', function() {
+        $("#portfolio-flters li").removeClass('filter-active');
+        $(this).addClass('filter-active');
+
+        portfolioIsotope.isotope({
+          filter: $(this).data('filter')
+        });
+        aos_init();
+      });
+    }
+
+    // Check if venobox plugin exists before initializing
+    if ($.fn.venobox) {
       $('.venobox').venobox();
-    });
+    }
   });
 
-  // Skills section
-  $('.skills-content').waypoint(function() {
-    $('.progress .progress-bar').each(function() {
-      $(this).css("width", $(this).attr("aria-valuenow") + '%');
+  // Skills section with waypoints
+  if ($.fn.waypoint && $('.skills-content').length) {
+    $('.skills-content').waypoint(function() {
+      $('.progress .progress-bar').each(function() {
+        $(this).css("width", $(this).attr("aria-valuenow") + '%');
+      });
+    }, {
+      offset: '80%'
     });
-  }, {
-    offset: '80%'
-  });
+  }
 
   // Portfolio details carousel
-  $(".portfolio-details-carousel").owlCarousel({
-    autoplay: true,
-    dots: true,
-    loop: true,
-    items: 1
-  });
+  if ($.fn.owlCarousel && $(".portfolio-details-carousel").length) {
+    $(".portfolio-details-carousel").owlCarousel({
+      autoplay: true,
+      dots: true,
+      loop: true,
+      items: 1
+    });
+  }
 
   // Init AOS
   function aos_init() {
-    AOS.init({
-      duration: 1000,
-      easing: "ease-in-out",
-      once: true
-    });
+    if (typeof AOS !== 'undefined') {
+      AOS.init({
+        duration: 1000,
+        easing: "ease-in-out",
+        once: true
+      });
+    }
   }
+  
   $(window).on('load', function() {
     aos_init();
   });
 
 })(jQuery);
+
+
+document.addEventListener('DOMContentLoaded', function() {
+  const heroCarousel = document.getElementById('heroCarousel');
+  
+  if (heroCarousel) {
+    // Initialize carousel with options
+    const carousel = new bootstrap.Carousel(heroCarousel, {
+      interval: 5000, // Change slide every 5 seconds
+      pause: 'hover', // Pause on hover
+      wrap: true, // Infinite loop
+      keyboard: true // Enable keyboard navigation
+    });
+    
+    // Add smooth transition
+    heroCarousel.addEventListener('slide.bs.carousel', function(event) {
+      const nextSlide = event.relatedTarget;
+      nextSlide.style.opacity = 0;
+    });
+    
+    heroCarousel.addEventListener('slid.bs.carousel', function(event) {
+      const activeSlide = event.relatedTarget;
+      activeSlide.style.opacity = 1;
+    });
+    
+    // Auto-start the carousel
+    carousel.cycle();
+    
+    // Add keyboard navigation
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowLeft') {
+        carousel.prev();
+      } else if (e.key === 'ArrowRight') {
+        carousel.next();
+      }
+    });
+  }
+});
